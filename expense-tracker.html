@@ -904,11 +904,6 @@
             cb.value = s;
             label.appendChild(cb);
             label.appendChild(document.createTextNode(s));
-            label.addEventListener('click', (e) => {
-                if (e.target === cb) return;
-                cb.checked = !cb.checked;
-                label.classList.toggle('checked', cb.checked);
-            });
             cb.addEventListener('change', () => {
                 label.classList.toggle('checked', cb.checked);
             });
