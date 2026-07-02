@@ -46,6 +46,34 @@
             margin-bottom: 12px;
         }
 
+        /* ===== Summary Stats ===== */
+        .summary-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .summary-stats .stat-card {
+            background: rgba(255,255,255,0.13);
+            border-radius: 12px;
+            padding: 10px 6px;
+            text-align: center;
+            backdrop-filter: blur(4px);
+        }
+        .summary-stats .stat-card .stat-label {
+            font-size: 10px;
+            opacity: 0.8;
+            letter-spacing: 0.5px;
+        }
+        .summary-stats .stat-card .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .summary-stats .stat-card .stat-value.income-color { color: #6fcf97; }
+        .summary-stats .stat-card .stat-value.expense-color { color: #f28b82; }
+        .summary-stats .stat-card .stat-value.balance-color { color: #fff; }
+
         /* ===== Budget Section ===== */
         .budget-section {
             display: flex;
@@ -524,6 +552,22 @@
             </div>
         </div>
 
+        <!-- Summary Stats -->
+        <div class="summary-stats">
+            <div class="stat-card">
+                <div class="stat-label">总余额</div>
+                <div class="stat-value balance-color" id="totalBalance">¥0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">本月收入</div>
+                <div class="stat-value income-color" id="monthlyIncome">¥0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">本月支出</div>
+                <div class="stat-value expense-color" id="monthlyExpense">¥0.00</div>
+            </div>
+        </div>
+
         <!-- Month Picker -->
         <div class="month-picker">
             <button id="prevMonth" title="上个月">◀</button>
@@ -836,6 +880,28 @@
         return records
             .filter(r => r.type === 'income' && getYearFromDate(r.date) === y)
             .reduce((sum, r) => sum + Number(r.amount), 0);
+    }
+
+    function getTotalIncome() {
+        return records
+            .filter(r => r.type === 'income')
+            .reduce((sum, r) => sum + Number(r.amount), 0);
+    }
+
+    function getTotalExpense() {
+        return records
+            .filter(r => r.type === 'expense')
+            .reduce((sum, r) => sum + Number(r.amount), 0);
+    }
+
+    function updateSummaryStats() {
+        const totalIncome = getTotalIncome();
+        const totalExpense = getTotalExpense();
+        const balance = totalIncome - totalExpense;
+        $('totalBalance').textContent = (balance >= 0 ? '+' : '') + '¥' + balance.toFixed(2);
+        $('totalBalance').style.color = balance >= 0 ? '#6fcf97' : '#f28b82';
+        $('monthlyIncome').textContent = '+¥' + getMonthlyIncomeTotal(currentYear, currentMonth).toFixed(2);
+        $('monthlyExpense').textContent = '-¥' + getMonthlyExpenseTotal(currentYear, currentMonth).toFixed(2);
     }
 
     function updateRemaining() {
@@ -1276,6 +1342,7 @@
     // =============================================
 
     function refreshAll() {
+        updateSummaryStats();
         updateRemaining();
         renderList();
         refreshStats();
@@ -1283,6 +1350,7 @@
 
     function refreshMonthPicker() {
         monthLabel.textContent = `${currentYear}年${currentMonth}月`;
+        updateSummaryStats();
         updateRemaining();
         renderList();
     }
@@ -1404,6 +1472,7 @@
         recordDate.value = getTodayStr();
         resetForm();
         populateYearSelect();
+        updateSummaryStats();
         updateRemaining();
         renderList();
         refreshStats();
