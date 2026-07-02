@@ -230,12 +230,10 @@
             gap: 8px;
             margin-top: 4px;
         }
-        .subcategory-group label {
-            display: flex;
-            align-items: center;
-            gap: 4px;
+        .subcategory-group .subcategory-item label {
+            display: inline-block;
             font-size: 13px;
-            padding: 6px 12px;
+            padding: 6px 14px;
             background: #f0f5fe;
             border-radius: 20px;
             cursor: pointer;
@@ -243,10 +241,10 @@
             border: 1.5px solid transparent;
             user-select: none;
         }
-        .subcategory-group label:hover {
+        .subcategory-group .subcategory-item label:hover {
             background: #dce8f8;
         }
-        .subcategory-group label.checked {
+        .subcategory-group .subcategory-item label.checked {
             background: #4a90d9;
             color: #fff;
             border-color: #357abd;
@@ -898,16 +896,21 @@
         subcategoryGroup.innerHTML = '';
 
         subs.forEach(s => {
-            const label = document.createElement('label');
+            const div = document.createElement('div');
+            div.className = 'subcategory-item';
             const cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.value = s;
-            label.appendChild(cb);
-            label.appendChild(document.createTextNode(s));
+            cb.id = 'sub-' + s.replace(/\s+/g, '');
+            const label = document.createElement('label');
+            label.htmlFor = cb.id;
+            label.textContent = s;
+            div.appendChild(cb);
+            div.appendChild(label);
             cb.addEventListener('change', () => {
                 label.classList.toggle('checked', cb.checked);
             });
-            subcategoryGroup.appendChild(label);
+            subcategoryGroup.appendChild(div);
         });
     }
 
