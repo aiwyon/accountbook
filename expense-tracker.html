@@ -451,34 +451,78 @@
             max-height: 260px;
         }
 
-        /* Category amount list (below bar chart) */
+        /* Category amount list (next to pie chart) */
         .category-amount-list {
-            margin-top: 4px;
+            background: #f8faff;
+            border-radius: 10px;
+            padding: 6px 10px;
+            max-height: 280px;
+            overflow-y: auto;
+            border: 1px solid #e8eef6;
+        }
+        .category-amount-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .category-amount-list::-webkit-scrollbar-thumb {
+            background: #d0d8e6;
+            border-radius: 4px;
         }
         .category-amount-list .cat-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 4px 0;
+            padding: 6px 4px;
             font-size: 13px;
-            border-bottom: 1px solid #f0f3f8;
+            border-bottom: 1px solid #e8eef6;
+            transition: background 0.15s;
+        }
+        .category-amount-list .cat-row:hover {
+            background: rgba(74,144,217,0.06);
+            border-radius: 6px;
         }
         .category-amount-list .cat-row:last-child {
             border-bottom: none;
         }
         .category-amount-list .cat-row .cat-dot {
             display: inline-block;
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            margin-right: 6px;
+            margin-right: 8px;
+            flex-shrink: 0;
         }
         .category-amount-list .cat-row .cat-name {
-            color: #555;
+            color: #444;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
         }
         .category-amount-list .cat-row .cat-amount {
-            font-weight: 600;
+            font-weight: 700;
             color: #e74c3c;
+            font-size: 14px;
+            text-align: right;
+        }
+        .category-amount-list .cat-row .cat-pct {
+            font-weight: 400;
+            color: #aaa;
+            font-size: 11px;
+            margin-left: 4px;
+        }
+        .category-amount-list .cat-row.cat-total-row {
+            border-top: 2px solid #4a90d9;
+            border-bottom: none;
+            margin-top: 4px;
+            padding-top: 8px;
+        }
+        .category-amount-list .cat-row.cat-total-row .cat-name {
+            font-weight: 700;
+            color: #4a90d9;
+            font-size: 14px;
+        }
+        .category-amount-list .cat-row.cat-total-row .cat-amount {
+            color: #4a90d9;
+            font-size: 15px;
         }
 
         /* ===== Toast ===== */
@@ -713,10 +757,7 @@
                 </div>
             </div>
             <div class="chart-col">
-                <div style="text-align:center;font-size:12px;color:#888;margin-bottom:4px;">金额对比</div>
-                <div class="chart-wrapper" style="max-height:220px;">
-                    <canvas id="categoryBarChart"></canvas>
-                </div>
+                <div style="text-align:center;font-size:12px;color:#888;margin-bottom:4px;">本月支出明细</div>
                 <div class="category-amount-list" id="categoryAmountList"></div>
             </div>
         </div>
@@ -795,7 +836,6 @@
 
     // Chart instances
     let categoryChart = null;
-    let categoryBarChart = null;
     let monthlyChart = null;
     let yearlyChart = null;
 
@@ -1266,69 +1306,6 @@
         });
     }
 
-    function buildCategoryBarChart() {
-        destroyChart(categoryBarChart);
-        const filtered = getFilteredRecords();
-        const map = {};
-        filtered.forEach(r => {
-            const cat = r.category;
-            map[cat] = (map[cat] || 0) + Number(r.amount);
-        });
-        const labels = Object.keys(map);
-        const data = labels.map(l => map[l]);
-        const colors = [
-            '#4a90d9', '#e74c3c', '#f39c12', '#27ae60', '#9b59b6',
-            '#1abc9c', '#e67e22', '#3498db', '#2ecc71', '#e91e63',
-            '#00bcd4', '#ff5722'
-        ];
-
-        const ctx = document.getElementById('categoryBarChart').getContext('2d');
-        if (labels.length === 0) {
-            categoryBarChart = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: ['暂无数据'], datasets: [{ data: [0], backgroundColor: ['#eef3f8'] }] },
-                options: { responsive: true, maintainAspectRatio: true }
-            });
-            return;
-        }
-
-        categoryBarChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: '金额 (¥)',
-                    data: data,
-                    backgroundColor: colors.slice(0, labels.length),
-                    borderColor: colors.slice(0, labels.length),
-                    borderWidth: 1,
-                    borderRadius: 3
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => '¥' + ctx.parsed.x.toFixed(2)
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: val => '¥' + val.toFixed(0)
-                        }
-                    }
-                }
-            }
-        });
-    }
-
     function buildCategoryAmountList() {
         const filtered = getFilteredRecords();
         const map = {};
@@ -1360,9 +1337,16 @@
             const row = document.createElement('div');
             row.className = 'cat-row';
             row.innerHTML = '<span class="cat-name"><span class="cat-dot" style="background:' + item.color + '"></span>' + item.label + '</span>'
-                + '<span class="cat-amount">¥' + item.value.toFixed(2) + '<span style="font-weight:400;color:#aaa;font-size:11px;margin-left:4px;">(' + item.pct + '%)</span></span>';
+                + '<span class="cat-amount">¥' + item.value.toFixed(2) + '<span class="cat-pct">(' + item.pct + '%)</span></span>';
             container.appendChild(row);
         });
+
+        // Total row
+        const totalRow = document.createElement('div');
+        totalRow.className = 'cat-row cat-total-row';
+        totalRow.innerHTML = '<span class="cat-name">合计</span>'
+            + '<span class="cat-amount">¥' + total.toFixed(2) + '</span>';
+        container.appendChild(totalRow);
     }
 
     function buildMonthlyChart() {
@@ -1485,7 +1469,6 @@
 
     function refreshStats() {
         buildCategoryChart();
-        buildCategoryBarChart();
         buildCategoryAmountList();
         buildMonthlyChart();
         buildYearlyChart();
