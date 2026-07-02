@@ -1,0 +1,43 @@
+# Windows system files
+AppData/
+Application Data/
+Cookies/
+Local Settings/
+My Documents/
+NetHood/
+PrintHood/
+Recent/
+SendTo/
+Templates/
+「开始」菜单/
+OneDrive/
+NTUSER.DAT*
+ntuser.dat.*
+ntuser.ini
+
+# VS Code settings
+.vscode/
+.vscode-shared/
+
+# User profile folders
+Desktop/
+Documents/
+Downloads/
+Favorites/
+IntelGraphicsProfiles/
+Links/
+Music/
+Pictures/
+Saved Games/
+Searches/
+Videos/
+WPS Cloud Files/
+Contacts/
+
+# Git config
+.gitconfig
+
+# Only track specific project files
+!*.html
+!*.md
+!*.gitignore
