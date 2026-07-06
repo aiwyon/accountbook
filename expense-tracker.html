@@ -806,7 +806,7 @@
         </div>
 
         <!-- Category Charts Row -->
-        <div class="card-title" style="font-size:14px;margin-top:4px;">📊 分类支出</div>
+        <div class="card-title" style="font-size:14px;margin-top:4px;">📊 分类统计</div>
         <div class="chart-row">
             <div class="chart-col">
                 <div style="text-align:center;font-size:12px;color:#888;margin-bottom:4px;">占比</div>
@@ -815,7 +815,7 @@
                 </div>
             </div>
             <div class="chart-col">
-                <div style="text-align:center;font-size:12px;color:#888;margin-bottom:4px;">本月支出明细</div>
+                <div style="text-align:center;font-size:12px;color:#888;margin-bottom:4px;" id="statsAmountListTitle">本月支出明细</div>
                 <div class="category-amount-list" id="categoryAmountList"></div>
             </div>
         </div>
@@ -1391,7 +1391,7 @@
             categoryChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels: ['暂无数据'], datasets: [{ data: [1], backgroundColor: ['#eef3f8'] }] },
-                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } } }
+                options: { responsive: true, maintainAspectRatio: true, aspectRatio: 1, plugins: { legend: { display: false } } }
             });
             return;
         }
@@ -1410,6 +1410,7 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                aspectRatio: 1,
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -1645,6 +1646,8 @@
     function refreshStats() {
         buildCategoryChart();
         buildCategoryAmountList();
+        const titleEl = document.getElementById('statsAmountListTitle');
+        titleEl.textContent = statsMode === 'income' ? '本月收入明细' : '本月支出明细';
         const section = document.getElementById('sourceBalanceSection');
         if (statsMode === 'income') {
             section.style.display = 'block';
