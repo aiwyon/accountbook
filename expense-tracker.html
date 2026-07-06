@@ -746,14 +746,15 @@
 
         <!-- Payment source -->
         <div class="form-row">
-            <label for="paymentSource">支付来源</label>
+            <label for="paymentSource">收支来源</label>
             <select id="paymentSource"></select>
         </div>
 
         <!-- Card number (for 银行卡/信用卡) -->
         <div class="form-row hidden" id="cardNumberRow">
             <label for="cardNumber">卡号</label>
-            <input type="text" id="cardNumber" placeholder="请输入卡号后4位或完整卡号" maxlength="19">
+            <input type="text" id="cardNumber" list="cardNumberList" placeholder="选择已有卡号或手动输入" maxlength="19">
+            <datalist id="cardNumberList"></datalist>
         </div>
 
         <div class="form-row">
@@ -881,7 +882,7 @@
 
     const EXPENSE_MAIN_ORDER = Object.keys(EXPENSE_CATEGORIES);
 
-    const SOURCE_OPTIONS = ['微信', '支付宝', '银行卡', '信用卡', '现金'];
+    const SOURCE_OPTIONS = ['微信', '支付宝', '银行卡', '信用卡', '现金', '其他'];
 
     const STORAGE_KEY = 'expense_tracker_records_v2';
     const BUDGET_KEY = 'expense_tracker_budgets_v2'; // keyed by "YYYY-MM"
@@ -1078,6 +1079,22 @@
     // FORM LOGIC
     // =============================================
 
+    function populateCardNumberList() {
+        const datalist = document.getElementById('cardNumberList');
+        const saved = new Set();
+        records.forEach(r => {
+            if (r.cardNumber && r.cardNumber.trim()) {
+                saved.add(r.cardNumber.trim());
+            }
+        });
+        datalist.innerHTML = '';
+        saved.forEach(num => {
+            const opt = document.createElement('option');
+            opt.value = num;
+            datalist.appendChild(opt);
+        });
+    }
+
     function populatePaymentSource() {
         paymentSource.innerHTML = '';
         SOURCE_OPTIONS.forEach(s => {
@@ -1091,6 +1108,7 @@
             const val = paymentSource.value;
             if (val === '银行卡' || val === '信用卡') {
                 cardNumberRow.classList.remove('hidden');
+                populateCardNumberList();
             } else {
                 cardNumberRow.classList.add('hidden');
                 cardNumber.value = '';
@@ -1373,7 +1391,7 @@
             categoryChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels: ['暂无数据'], datasets: [{ data: [1], backgroundColor: ['#eef3f8'] }] },
-                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: true, position: 'bottom' } } }
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } } }
             });
             return;
         }
@@ -1393,7 +1411,7 @@
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 12 } },
+                    legend: { display: false },
                     tooltip: {
                         callbacks: {
                             label: function(ctx) {
