@@ -442,21 +442,21 @@
         .chart-wrapper {
             position: relative;
             width: 100%;
-            max-height: 210px;
-            margin-bottom: 8px;
+            max-height: 158px;
+            margin-bottom: 6px;
         }
         .chart-wrapper canvas {
             width: 100% !important;
             height: auto !important;
-            max-height: 195px;
+            max-height: 146px;
         }
 
         /* Category amount list (next to pie chart) */
         .category-amount-list {
             background: #f8faff;
             border-radius: 10px;
-            padding: 6px 10px;
-            max-height: 210px;
+            padding: 4px 8px;
+            max-height: 158px;
             overflow-y: auto;
             border: 1px solid #e8eef6;
         }
@@ -523,6 +523,51 @@
         .category-amount-list .cat-row.cat-total-row .cat-amount {
             color: #4a90d9;
             font-size: 15px;
+        }
+
+        /* Source balance grid */
+        .source-balance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .source-balance-grid .source-card {
+            background: #f8faff;
+            border: 1px solid #e8eef6;
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+        }
+        .source-balance-grid .source-card .source-name {
+            font-size: 12px;
+            color: #888;
+            font-weight: 500;
+        }
+        .source-balance-grid .source-card .source-balance {
+            font-size: 18px;
+            font-weight: 700;
+            color: #27ae60;
+            margin-top: 2px;
+        }
+        .source-balance-grid .source-card .source-balance.negative {
+            color: #e74c3c;
+        }
+        .source-balance-grid .source-card .source-detail {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 2px;
+        }
+        .source-balance-grid .source-card .source-cards {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+        }
+        .source-balance-grid .source-card .source-cards .card-line {
+            display: flex;
+            justify-content: space-between;
+            padding: 1px 0;
         }
 
         /* ===== Toast ===== */
@@ -699,6 +744,18 @@
             <input type="text" id="otherInput" placeholder="请输入类别名称">
         </div>
 
+        <!-- Payment source -->
+        <div class="form-row">
+            <label for="paymentSource">支付来源</label>
+            <select id="paymentSource"></select>
+        </div>
+
+        <!-- Card number (for 银行卡/信用卡) -->
+        <div class="form-row hidden" id="cardNumberRow">
+            <label for="cardNumber">卡号</label>
+            <input type="text" id="cardNumber" placeholder="请输入卡号后4位或完整卡号" maxlength="19">
+        </div>
+
         <div class="form-row">
             <label for="recordAmount">金额（¥）</label>
             <input type="number" id="recordAmount" min="0.01" step="0.01" placeholder="0.00" required>
@@ -752,7 +809,7 @@
         <div class="chart-row">
             <div class="chart-col">
                 <div style="text-align:center;font-size:12px;color:#888;margin-bottom:4px;">占比</div>
-                <div class="chart-wrapper" style="max-height:165px;">
+                <div class="chart-wrapper" style="max-height:124px;">
                     <canvas id="categoryChart"></canvas>
                 </div>
             </div>
@@ -760,6 +817,12 @@
                 <div style="text-align:center;font-size:12px;color:#888;margin-bottom:4px;">本月支出明细</div>
                 <div class="category-amount-list" id="categoryAmountList"></div>
             </div>
+        </div>
+
+        <!-- Source Balance (shown in income mode) -->
+        <div id="sourceBalanceSection" style="display:none;">
+            <div class="card-title" style="font-size:14px;margin-top:4px;">💰 各账户余额</div>
+            <div class="source-balance-grid" id="sourceBalanceGrid"></div>
         </div>
 
         <!-- Monthly Trend -->
@@ -798,7 +861,7 @@
     // DATA DEFINITIONS
     // =============================================
 
-    const INCOME_CATEGORIES = ['微信转账', '银行转账', '现金', '其他'];
+    const INCOME_CATEGORIES = ['微信', '支付宝', '银行转账', '现金', '其他'];
 
     const EXPENSE_CATEGORIES = {
         '交通':     ['公交', '地铁', '打车', '共享单车', '火车/飞机', '其他'],
@@ -817,6 +880,8 @@
     };
 
     const EXPENSE_MAIN_ORDER = Object.keys(EXPENSE_CATEGORIES);
+
+    const SOURCE_OPTIONS = ['微信', '支付宝', '银行卡', '信用卡', '现金'];
 
     const STORAGE_KEY = 'expense_tracker_records_v2';
     const BUDGET_KEY = 'expense_tracker_budgets_v2'; // keyed by "YYYY-MM"
@@ -848,6 +913,9 @@
     const subcategoryGroup = $('subcategoryGroup');
     const otherInputRow = $('otherInputRow');
     const otherInput = $('otherInput');
+    const paymentSource = $('paymentSource');
+    const cardNumberRow = $('cardNumberRow');
+    const cardNumber = $('cardNumber');
     const recordAmount = $('recordAmount');
     const recordNote = $('recordNote');
     const submitBtn = $('submitBtn');
@@ -1010,6 +1078,26 @@
     // FORM LOGIC
     // =============================================
 
+    function populatePaymentSource() {
+        paymentSource.innerHTML = '';
+        SOURCE_OPTIONS.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            paymentSource.appendChild(opt);
+        });
+        // Toggle card number input
+        paymentSource.addEventListener('change', () => {
+            const val = paymentSource.value;
+            if (val === '银行卡' || val === '信用卡') {
+                cardNumberRow.classList.remove('hidden');
+            } else {
+                cardNumberRow.classList.add('hidden');
+                cardNumber.value = '';
+            }
+        });
+    }
+
     function populateMainCategory() {
         const type = document.querySelector('input[name="recordType"]:checked').value;
         mainCategory.innerHTML = '';
@@ -1098,6 +1186,9 @@
         populateMainCategory();
         mainCategory.value = '交通';
         updateSubcategories();
+        paymentSource.value = '微信';
+        cardNumber.value = '';
+        cardNumberRow.classList.add('hidden');
         recordAmount.value = '';
         recordNote.value = '';
         otherInput.value = '';
@@ -1134,10 +1225,18 @@
 
         const note = recordNote.value.trim();
 
+        // Card number (only for 银行卡/信用卡)
+        let cardNum = '';
+        if (paymentSource.value === '银行卡' || paymentSource.value === '信用卡') {
+            cardNum = cardNumber.value.trim();
+        }
+
         const record = {
             id: generateId(),
             date: date,
             type: type,
+            source: paymentSource.value,
+            cardNumber: cardNum,
             category: cat,
             subcategories: subcategories,
             amount: amount,
@@ -1202,6 +1301,9 @@
             let catText = r.category;
             if (r.subcategories && r.subcategories.length > 0 && r.subcategories[0] !== r.category) {
                 catText += ' › ' + r.subcategories.join('、');
+            }
+            if (r.source) {
+                catText += ' [' + r.source + ']';
             }
             catEl.textContent = catText;
 
@@ -1467,9 +1569,71 @@
         });
     }
 
+    function getSourceBalances() {
+        const balances = {};
+        SOURCE_OPTIONS.forEach(s => balances[s] = 0);
+        const cardBalances = {};
+        records.forEach(r => {
+            const src = r.source;
+            if (!src) return;
+            if (!balances[src]) balances[src] = 0;
+            if (r.type === 'income') {
+                balances[src] += Number(r.amount);
+            } else {
+                balances[src] -= Number(r.amount);
+            }
+            if (r.cardNumber) {
+                const key = src + '|' + r.cardNumber;
+                if (!cardBalances[key]) cardBalances[key] = 0;
+                if (r.type === 'income') {
+                    cardBalances[key] += Number(r.amount);
+                } else {
+                    cardBalances[key] -= Number(r.amount);
+                }
+            }
+        });
+        return { balances, cardBalances };
+    }
+
+    function buildSourceBalances() {
+        const container = document.getElementById('sourceBalanceGrid');
+        container.innerHTML = '';
+        const { balances, cardBalances } = getSourceBalances();
+        SOURCE_OPTIONS.forEach(src => {
+            const bal = balances[src] || 0;
+            const card = document.createElement('div');
+            card.className = 'source-card';
+            const cardKeys = Object.keys(cardBalances).filter(k => k.startsWith(src + '|'));
+            let cardsHtml = '';
+            if (cardKeys.length > 0) {
+                let lines = '';
+                cardKeys.forEach(k => {
+                    const cardNum = k.split('|')[1];
+                    const cardBal = cardBalances[k];
+                    const cSign = cardBal >= 0 ? '+' : '';
+                    lines += '<div class="card-line"><span>' + cardNum + '</span><span>' + cSign + '¥' + cardBal.toFixed(2) + '</span></div>';
+                });
+                cardsHtml = '<div class="source-cards">' + lines + '</div>';
+            }
+            const balClass = bal < 0 ? ' negative' : '';
+            const sign = bal >= 0 ? '+' : '';
+            card.innerHTML = '<div class="source-name">' + src + '</div>'
+                + '<div class="source-balance' + balClass + '">' + sign + '¥' + bal.toFixed(2) + '</div>'
+                + cardsHtml;
+            container.appendChild(card);
+        });
+    }
+
     function refreshStats() {
         buildCategoryChart();
         buildCategoryAmountList();
+        const section = document.getElementById('sourceBalanceSection');
+        if (statsMode === 'income') {
+            section.style.display = 'block';
+            buildSourceBalances();
+        } else {
+            section.style.display = 'none';
+        }
         buildMonthlyChart();
         buildYearlyChart();
     }
@@ -1608,6 +1772,7 @@
         loadData();
         recordDate.value = getTodayStr();
         resetForm();
+        populatePaymentSource();
         populateYearSelect();
         updateSummaryStats();
         updateRemaining();
